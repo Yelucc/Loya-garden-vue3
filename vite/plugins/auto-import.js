@@ -1,4 +1,5 @@
 import autoImport from 'unplugin-auto-import/vite'
+import {VantResolver} from '@vant/auto-import-resolver';
 
 export default function createAutoImport() {
     return autoImport({
@@ -7,6 +8,7 @@ export default function createAutoImport() {
             'vue-router',
             'pinia'
         ],
+        resolvers: [VantResolver()],
         dts: false
     })
 }
