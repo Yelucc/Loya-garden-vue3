@@ -27,7 +27,7 @@
         </template>
       </van-card>
     </div>
-    <van-submit-bar button-text="提交订单" @submit="onConfirm"/>
+    <van-submit-bar :disabled="choseJewelList.length === 0" button-text="提交订单" @submit="onConfirm"/>
 
     <van-action-sheet v-model:show="show" title="首饰预定">
       <div class="action-content">
@@ -52,18 +52,23 @@
                 @confirm="onTimeConfirm"/>
           </van-popup>
           <div class="address" @click="addressSelectShow = true">
-            地址
-            <van-icon name="friends"/>
-            {{ orderFrom.address || '（预定阶段可缓填）' }}
+            <div class="label">
+              地址
+              <van-icon name="friends"/>
+            </div>
+            <div class="context">
+              {{ address }}
+            </div>
           </div>
 
           <van-action-sheet v-model:show="addressSelectShow" title="地址列表">
             <van-address-list
-                v-model="orderFrom.address"
-                :list="list"
+                v-model="addressIdx"
+                :list="userAddressList"
                 default-tag-text="默认"
                 @add="addressEditShow = true"
                 @edit="onEditAddress"
+                @select="onSelectAddress"
             />
           </van-action-sheet>
 
@@ -71,8 +76,8 @@
             <van-address-edit
                 :address-info="editAddress"
                 :area-columns-placeholder="['请选择', '请选择', '请选择']"
-                :area-list="[]"
-                show-delete
+                :area-list="areaList"
+                @save="onAddressSave"
             />
           </van-action-sheet>
 
@@ -102,7 +107,7 @@
           </van-card>
         </div>
 
-        <van-button type="danger">立即预定</van-button>
+        <van-button type="danger" @click="onSubmit">立即预定</van-button>
       </div>
     </van-action-sheet>
   </div>
@@ -110,6 +115,11 @@
 
 <script setup>
 import {listJewelcase} from "@/api/jewel/jewelcase.js";
+import {showToast} from "vant";
+import {areaList} from '@vant/area-data';
+import {addOrderManagement} from "../../../api/order/orderManagement.js";
+
+const router = useRouter();
 
 const active = ref(0);
 const show = ref(false);
@@ -133,6 +143,8 @@ const {proxy} = getCurrentInstance();
 const {jewel_category, jewel_reservation_status} = proxy.useDict('jewel_category', 'jewel_reservation_status');
 
 // 商品列表
+const editIdx = ref(-1)
+const addressIdx = ref(-1);
 const jewelcaseList = ref([]);
 const choseJewelList = ref([]);
 const data = reactive({
@@ -143,26 +155,38 @@ const data = reactive({
     reservationStatus: null,
   },
   orderFrom: {
+    // 首饰IDs
     jewelCode: [],
-    address: null,
+    // 艺人
     artistName: null,
+    // 活动内容
     purpose: null,
+    // 送达时间
     deliveryDate: null,
+
+    // 收件人
+    recipientName: null,
+    // 收件电话
+    recipientPhone: null,
+    // 收件地址
+    recipientAddress: null
   }
 });
 
 
-const list = [
-  {
-    id: '1',
-    name: '张三',
-    tel: '13000000000',
-    address: '浙江省杭州市西湖区文三路 138 号东方通信大厦 7 楼 501 室',
-    isDefault: true,
-  }
-];
-
 const {jewelQueryParams, orderFrom} = toRefs(data);
+
+const userAddressList = ref([]);
+const userAddressEdit = ref([]);
+
+const address = computed(() => {
+  if (userAddressList.value.length > 0 && userAddressList.value[addressIdx.value]) {
+    return userAddressList.value[addressIdx.value].address
+  } else {
+    return "（预定阶段可缓填）"
+  }
+})
+
 
 onMounted(() => {
   getList()
@@ -173,14 +197,57 @@ onMounted(() => {
  * @param id
  */
 function addToCart(jewel) {
-  orderFrom.value.jewelCode.push(jewel.id + '')
+  orderFrom.value.jewelCode.push(jewel.jewelId)
   choseJewelList.value.push(jewel)
 }
 
 //
 function onEditAddress(item, index) {
-  editAddress.value = item;
+  editAddress.value = userAddressEdit.value[index];
+  editIdx.value = index
   addressEditShow.value = true
+}
+
+function onAddressSave(data) {
+  if (editIdx.value === -1) {
+    userAddressEdit.value.push({
+      name: data.name,
+      tel: data.tel,
+      city: data.city,
+      county: data.county,
+      country: data.country,
+      province: data.province,
+      areaCode: data.areaCode,
+      isDefault: data.isDefault,
+      addressDetail: data.addressDetail
+    })
+    userAddressList.value.push({
+      id: userAddressList.value.length,
+      name: data.name,
+      tel: data.tel,
+      address: data.province + data.city + data.county + data.addressDetail,
+    })
+  } else {
+    userAddressEdit.value[editIdx.value] = {
+      name: data.name,
+      tel: data.tel,
+      city: data.city,
+      county: data.county,
+      country: data.country,
+      province: data.province,
+      areaCode: data.areaCode,
+      isDefault: data.isDefault,
+      addressDetail: data.addressDetail
+    }
+    userAddressList.value[editIdx.value] = {
+      id: editIdx.value,
+      name: data.name,
+      tel: data.tel,
+      address: data.province + data.city + data.county + data.addressDetail,
+    }
+  }
+  editIdx.value = -1
+  addressEditShow.value = false
 }
 
 function removeToCart(jewel) {
@@ -190,6 +257,7 @@ function removeToCart(jewel) {
 
 function onTimeConfirm({selectedValues}) {
   showPicker.value = false;
+  orderFrom.value.deliveryDate = currentDate.value
 }
 
 function onConfirm() {
@@ -206,6 +274,34 @@ function getList() {
 function changeTypeTab(index) {
   queryParams.value.category = jewel_category.value[index].value
   getList()
+}
+
+function onSelectAddress(item) {
+  orderFrom.value.recipientName = item.name
+  orderFrom.value.recipientPhone = item.tel
+  orderFrom.value.recipientAddress = item.address
+  addressEditShow.value = false
+}
+
+function onSubmit() {
+  // 处理提交和校验
+  orderFrom.value.deliveryDate = `${currentDate.value[0]}-${currentDate.value[1]}-${currentDate.value[2]}`
+  //校验
+  if (!orderFrom.value.artistName || orderFrom.value.artistName === "") {
+    showToast('请填写艺人');
+    return;
+  }
+  if (!orderFrom.value.purpose || orderFrom.value.purpose === "") {
+    showToast('请填写活动内容');
+    return;
+  }
+  if (orderFrom.value.jewelCode.length === 0) {
+    showToast('请至少选择一个首饰');
+    return;
+  }
+  addOrderManagement(orderFrom.value).then(response => {
+    router.push({name: 'MallStatus', params: {status: 'lock'}});
+  });
 }
 
 </script>
@@ -262,6 +358,13 @@ function changeTypeTab(index) {
         padding: 10px;
         border-radius: 10px;
         color: #57723e;
+
+        display: flex;
+        flex-direction: row;
+
+        .label {
+          width: 20%;
+        }
       }
 
 

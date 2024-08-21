@@ -11,6 +11,9 @@ importers:
       '@element-plus/icons-vue':
         specifier: 2.3.1
         version: 2.3.1(vue@3.4.31)
+      '@vant/area-data':
+        specifier: ^1.5.1
+        version: 1.5.1
       '@vant/auto-import-resolver':
         specifier: ^1.2.1
         version: 1.2.1
@@ -41,6 +44,9 @@ importers:
       jsencrypt:
         specifier: 3.3.2
         version: 3.3.2
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.21
       nprogress:
         specifier: 0.2.0
         version: 0.2.0
@@ -403,6 +409,9 @@ packages:
 
   '@types/web-bluetooth@0.0.20':
     resolution: { integrity: sha512-g9gZnnXVq7gM7v3tJCWV/qw7w+KeOlSHAhgF9RytFyifW6AF61hdT2ucrYhPq9hLs5JIryeupHV3qGk95dH9ow== }
+
+  '@vant/area-data@1.5.1':
+    resolution: { integrity: sha512-gR5TPEzTbxN1cTK1aDhCoyikSCLX7DAacxyXoKyI4SAsYYTZrDl/nLgQFIm9vLsvWzlPIda8xV8/U3x7M9k6ww== }
 
   '@vant/auto-import-resolver@1.2.1':
     resolution: { integrity: sha512-czGWW4UolNITkF3qQSQlpHDHAsI3/GHVKbRMmEEpry7NWdnU4p5a5jBi0VApbaLa5g80Hy10XVs3IB+UozoSUw== }
@@ -2008,6 +2017,8 @@ snapshots:
   '@types/web-bluetooth@0.0.16': { }
 
   '@types/web-bluetooth@0.0.20': { }
+
+  '@vant/area-data@1.5.1': { }
 
   '@vant/auto-import-resolver@1.2.1': { }
 
