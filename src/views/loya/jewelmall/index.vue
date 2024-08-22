@@ -26,6 +26,12 @@
           </van-button>
         </template>
       </van-card>
+
+      <van-empty v-if="jewelcaseList.length === 0"
+                 :image="customEmptyImage"
+                 image-size="80"
+                 description="暂无首饰"
+      />
     </div>
     <van-submit-bar :disabled="choseJewelList.length === 0" button-text="提交订单" @submit="onConfirm"/>
 
@@ -118,7 +124,7 @@ import {listJewelcase} from "@/api/jewel/jewelcase.js";
 import {showToast} from "vant";
 import {areaList} from '@vant/area-data';
 import {addOrderManagement} from "../../../api/order/orderManagement.js";
-
+import customEmptyImage from '@/assets/images/custom-empty-image.png';
 const router = useRouter();
 
 const active = ref(0);

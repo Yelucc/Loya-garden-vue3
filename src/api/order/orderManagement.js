@@ -9,6 +9,15 @@ export function listOrderManagement(query) {
     })
 }
 
+// 查询订单管理列表
+export function listOrderVo(query) {
+    return request({
+        url: '/order/orderManagement/list-vo',
+        method: 'get',
+        params: query
+    })
+}
+
 // 查询订单管理详细
 export function getOrderManagement(orderId) {
     return request({

@@ -73,7 +73,7 @@ export const constantRoutes = [
             {
                 name: 'MallStatus',
                 path: '/mall/status/:status',
-                component: () => import('@/views/loya/jewelmall/lock-success'),
+                component: () => import('@/views/loya/jewelmall/page/lock-success.vue'),
                 hidden: true,
                 meta: {title: '预定成功', affix: true}
             }

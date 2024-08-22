@@ -153,24 +153,6 @@
         <el-form-item label="首饰图片地址" prop="imageUrl">
           <image-upload v-model="form.imageUrl"/>
         </el-form-item>
-        <el-form-item label="首饰预定状态" prop="reservationStatus">
-          <el-select v-model="form.reservationStatus" placeholder="请选择首饰预定状态">
-            <el-option
-                v-for="dict in jewel_reservation_status"
-                :key="dict.value"
-                :label="dict.label"
-                :value="dict.value"
-            ></el-option>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="预计寄回时间" prop="expectedReturnTime">
-          <el-date-picker v-model="form.expectedReturnTime"
-                          clearable
-                          placeholder="请选择预计寄回时间"
-                          type="date"
-                          value-format="YYYY-MM-DD">
-          </el-date-picker>
-        </el-form-item>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
@@ -204,19 +186,20 @@ const data = reactive({
     pageNum: 1,
     pageSize: 10,
     category: null,
+    jewelName: null,
     imageUrl: null,
     reservationStatus: null,
     expectedReturnTime: null,
   },
   rules: {
+    jewelName: [
+      {required: true, message: "首饰名称不能为空", trigger: "change"}
+    ],
     category: [
       {required: true, message: "首饰分类不能为空", trigger: "change"}
     ],
     imageUrl: [
       {required: true, message: "首饰图片地址不能为空", trigger: "blur"}
-    ],
-    reservationStatus: [
-      {required: true, message: "首饰预定状态不能为空", trigger: "change"}
     ],
   }
 });
