@@ -8,7 +8,7 @@
         <van-search shape="round" v-model="searchQuery" placeholder="请输入搜索关键词"/>
       </template>
     </van-nav-bar>
-    <van-tabs v-model:active="active">
+    <van-tabs v-model:active="active" @change="onLoad">
       <van-tab :title="tab.title" :name="tab.name" v-for="tab in tabs" :key="tab.name">
         <van-list
             class="card-container"
@@ -17,8 +17,12 @@
             finished-text="没有更多了"
             @load="onLoad"
         >
-          <UserOrderCard v-for="(order,idx) in orderList" :key="idx" v-model:model-value="orderList[idx]">
-          </UserOrderCard>
+          <UserOrderCard
+              v-for="(order,idx) in orderList"
+              :key="idx"
+              v-model:model-value="orderList[idx]"
+              @refresh="getList"
+          />
         </van-list>
       </van-tab>
     </van-tabs>
@@ -45,10 +49,15 @@ const tabs = [
   {
     title: '待寄回',
     name: 'received_awaiting_return'
-  }, {
+  },
+  {
     title: '待反馈',
     name: 'returned'
-  }
+  },
+  {
+    title: '已关闭',
+    name: 'close'
+  },
 ]
 
 const router = useRouter()
@@ -60,13 +69,13 @@ const finished = ref(false);
 const orderList = ref([])
 const total = ref(0)
 
-function getList(){
+function getList() {
   loading.value = true;
   listOrderVo({
     pageNum: 1,
     pageSize: 4,
-    status: active.value
-  }).then(response=>{
+    orderStatus: active.value === 0 ? null : active.value
+  }).then(response => {
     orderList.value = response.rows
     total.value = response.total;
     loading.value = false;
@@ -104,7 +113,7 @@ function onLoad() {
   .card-container {
     display: flex;
     flex-wrap: wrap;
-    justify-content: space-around;
+    justify-content: center;
     margin-top: 10px;
 
   }

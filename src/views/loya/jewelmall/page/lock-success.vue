@@ -13,16 +13,17 @@
       </div>
     </div>
     <div class="btn">
-      <van-button hairline plain round type="success">查看预定</van-button>
-      <van-button round type="success">返回珠宝盒</van-button>
+      <van-button hairline plain round type="success" @click="router.push('/loya/user')">查看预定</van-button>
+      <van-button round type="success" @click="router.push('/loya/mall')">返回珠宝盒</van-button>
     </div>
   </div>
 </template>
 
 <script setup>
 
-import {useRoute} from "vue-router";
+import {useRoute, useRouter} from "vue-router";
 const route = useRoute()
+const  router = useRouter()
 
 
 </script>

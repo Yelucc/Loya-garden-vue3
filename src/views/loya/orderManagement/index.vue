@@ -271,10 +271,26 @@
                   <el-button type="primary" round @click="submitForm">确认</el-button>
                 </div>
                 <div class="pending_shipment" v-if="form.orderStatus === 'pending_shipment'">
+                  <el-descriptions title="客户已补充地址信息：" :column="1">
+                    <el-descriptions-item label="收件人">{{ form.tripInfo.recipientName }}</el-descriptions-item>
+                    <el-descriptions-item label="联系电话">{{ form.tripInfo.recipientPhone }}</el-descriptions-item>
+                    <el-descriptions-item label="地址">{{ form.tripInfo.recipientAddress }}</el-descriptions-item>
+                  </el-descriptions>
                   <!--                TODO 图片识别快递单号-->
                   <el-form-item label="寄出物流单号" prop="shipmentTrackingNo">
                     <el-input v-model="form.shipmentTrackingNo" placeholder="请输入寄出物流单号"/>
                   </el-form-item>
+                  <el-form-item label="寄件人" prop="senderName">
+                    <el-input v-model="form.tripInfo.senderName" placeholder="寄件人"/>
+                  </el-form-item>
+                  <el-form-item label="联系电话" prop="senderPhone">
+                    <el-input v-model="form.tripInfo.senderPhone" placeholder="联系电话"/>
+                  </el-form-item>
+                  <el-form-item label="寄出地址" prop="senderAddress">
+                    <el-input v-model="form.tripInfo.senderAddress" placeholder="寄出地址"/>
+                  </el-form-item>
+
+
                   <el-button type="primary" round @click="submitForm">确认</el-button>
                 </div>
               </div>
@@ -353,6 +369,7 @@ const data = reactive({
 });
 
 const {queryParams, form, rules} = toRefs(data);
+const logisticsForm = ref({})
 
 /** 查询订单管理列表 */
 function getList() {
