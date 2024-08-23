@@ -127,7 +127,7 @@
       <el-table-column align="center" class-name="small-padding fixed-width" label="操作">
         <template #default="scope">
           <el-button v-hasPermi="['order:orderManagement:edit']" icon="Edit" link type="primary"
-                     @click="handleUpdate(scope.row)">修改
+                     @click="handleUpdate(scope.row)">查看
           </el-button>
           <el-button v-hasPermi="['order:orderManagement:remove']" icon="Delete" link type="primary"
                      @click="handleDelete(scope.row)">删除
@@ -144,86 +144,6 @@
         @pagination="getList"
     />
 
-    <!-- 添加或修改订单管理对话框 -->
-    <!--    <el-dialog v-model="open" :title="title" append-to-body width="500px">-->
-    <!--      <el-form ref="orderManagementRef" :model="form" :rules="rules" label-width="80px">-->
-    <!--        <el-form-item label="关联首饰编码" prop="jewelCode">-->
-    <!--          <el-input v-model="form.jewelCode" placeholder="请输入关联首饰编码"/>-->
-    <!--        </el-form-item>-->
-    <!--        <el-form-item label="艺人" prop="artistName">-->
-    <!--          <el-input v-model="form.artistName" placeholder="请输入艺人"/>-->
-    <!--        </el-form-item>-->
-    <!--        <el-form-item label="用途" prop="purpose">-->
-    <!--          <el-input v-model="form.purpose" placeholder="请输入内容" type="textarea"/>-->
-    <!--        </el-form-item>-->
-    <!--        <el-form-item label="返图时间" prop="returnPhotoTime">-->
-    <!--          <el-date-picker v-model="form.returnPhotoTime"-->
-    <!--                          clearable-->
-    <!--                          placeholder="请选择返图时间"-->
-    <!--                          type="date"-->
-    <!--                          value-format="YYYY-MM-DD">-->
-    <!--          </el-date-picker>-->
-    <!--        </el-form-item>-->
-    <!--        <el-form-item label="露出方式" prop="exposureMethod">-->
-    <!--          <el-input v-model="form.exposureMethod" placeholder="请输入露出方式"/>-->
-    <!--        </el-form-item>-->
-    <!--        <el-form-item label="需求送达日期" prop="deliveryDate">-->
-    <!--          <el-date-picker v-model="form.deliveryDate"-->
-    <!--                          clearable-->
-    <!--                          placeholder="请选择需求送达日期"-->
-    <!--                          type="date"-->
-    <!--                          value-format="YYYY-MM-DD">-->
-    <!--          </el-date-picker>-->
-    <!--        </el-form-item>-->
-    <!--        <el-form-item label="预计使用时长 (天)" prop="expectedUsageDuration">-->
-    <!--          <el-input v-model="form.expectedUsageDuration" placeholder="请输入预计使用时长 (天)"/>-->
-    <!--        </el-form-item>-->
-    <!--        <el-form-item label="寄出物流单号" prop="shipmentTrackingNo">-->
-    <!--          <el-input v-model="form.shipmentTrackingNo" placeholder="请输入寄出物流单号"/>-->
-    <!--        </el-form-item>-->
-    <!--        <el-form-item label="送达日期" prop="arrivalDate">-->
-    <!--          <el-date-picker v-model="form.arrivalDate"-->
-    <!--                          clearable-->
-    <!--                          placeholder="请选择送达日期"-->
-    <!--                          type="date"-->
-    <!--                          value-format="YYYY-MM-DD">-->
-    <!--          </el-date-picker>-->
-    <!--        </el-form-item>-->
-    <!--        <el-form-item label="寄返物流单号" prop="returnShipmentTrackingNo">-->
-    <!--          <el-input v-model="form.returnShipmentTrackingNo" placeholder="请输入寄返物流单号"/>-->
-    <!--        </el-form-item>-->
-    <!--        <el-form-item label="寄回时间" prop="returnDate">-->
-    <!--          <el-date-picker v-model="form.returnDate"-->
-    <!--                          clearable-->
-    <!--                          placeholder="请选择寄回时间"-->
-    <!--                          type="date"-->
-    <!--                          value-format="YYYY-MM-DD">-->
-    <!--          </el-date-picker>-->
-    <!--        </el-form-item>-->
-    <!--        <el-form-item label="订单返图" prop="returnPhoto">-->
-    <!--          <el-input v-model="form.returnPhoto" placeholder="请输入订单返图"/>-->
-    <!--        </el-form-item>-->
-    <!--        <el-form-item label="宣发链接" prop="promotionLink">-->
-    <!--          <el-input v-model="form.promotionLink" placeholder="请输入宣发链接"/>-->
-    <!--        </el-form-item>-->
-    <!--        <el-form-item label="订单流程" prop="orderStatus">-->
-    <!--          <el-select v-model="form.orderStatus" placeholder="请选择订单流程">-->
-    <!--            <el-option-->
-    <!--                v-for="dict in order_status"-->
-    <!--                :key="dict.value"-->
-    <!--                :label="dict.label"-->
-    <!--                :value="dict.value"-->
-    <!--            ></el-option>-->
-    <!--          </el-select>-->
-    <!--        </el-form-item>-->
-    <!--      </el-form>-->
-    <!--      <template #footer>-->
-    <!--        <div class="dialog-footer">-->
-    <!--          <el-button type="primary" @click="submitForm">确 定</el-button>-->
-    <!--          <el-button @click="cancel">取 消</el-button>-->
-    <!--        </div>-->
-    <!--      </template>-->
-    <!--    </el-dialog>-->
 
     <el-drawer
         v-model="open"

@@ -35,14 +35,14 @@
       <van-button
           type="warning" round plain hairline size="small"
           @click="onShow('addressEditShow')"
-          v-if="model.orderStatus === 'init'"
+          v-if="model.orderStatus === 'locked'"
       >
         {{ '补充地址' }}
       </van-button>
-      <van-button type="default" round plain hairline size="small"
-                  v-if="model.orderStatus === 'shipped_awaiting_receipt'">
-        {{ '查看物流' }}
-      </van-button>
+      <!--      <van-button type="default" round plain hairline size="small"-->
+      <!--                  v-if="model.orderStatus === 'shipped_awaiting_receipt'">-->
+      <!--        {{ '查看物流' }}-->
+      <!--      </van-button>-->
       <van-button type="success" round plain hairline size="small"
                   @click="onConfirm"
                   v-if="model.orderStatus === 'shipped_awaiting_receipt'">
@@ -58,11 +58,12 @@
           '补充返图宣发'
         }}
       </van-button>
-      <van-button type="danger" round plain hairline size="small" v-if="model.orderStatus === 'init'">{{
+      <van-button type="danger" round plain hairline size="small" v-if="model.orderStatus === 'locked'">{{
           '取消订单'
         }}
       </van-button>
-      <van-button type="primary" round plain hairline size="small" v-if="model.orderStatus === 'init'">{{
+      <van-button type="primary" round plain hairline size="small" @click="onShow('orderEditShow')"
+                  v-if="model.orderStatus === 'locked'">{{
           '修改订单'
         }}
       </van-button>
@@ -99,7 +100,7 @@
                 class="sku-card"
             >
               <template #footer>
-                <van-checkbox class="checkbox" v-model="jewel.selected"></van-checkbox>
+                <van-checkbox class="checkbox" :disabled="jewel.disable" v-model="jewel.selected"></van-checkbox>
               </template>
             </van-card>
           </div>
@@ -135,6 +136,8 @@
         </van-form>
       </div>
     </van-action-sheet>
+
+    <JewelReserveAction v-model="choseJewelList" v-model:show="orderEditShow" v-model:form-data="form"></JewelReserveAction>
   </div>
 </template>
 
@@ -145,17 +148,55 @@ import {addOrderManagement, getOrderManagement, updateOrderManagement} from "@/a
 import VantImageUpload from "@/components/VantImageUpload";
 import {showConfirmDialog, showToast} from "vant";
 import {addLogistics} from "@/api/logistics/logistics.js";
+import JewelReserveAction from "@/views/loya/jewelmall/JewelReserveAction.vue";
 
 const {proxy} = getCurrentInstance();
 const {order_status} = proxy.useDict('order_status');
 const {jewel_category} = proxy.useDict('jewel_category');
 const model = defineModel()
+const orderEditShow = ref(false)
 const addressEditShow = ref(false)
 const turnActionShow = ref(false)
 const feedbackActionShow = ref(false)
 const returnShipmentTrackingNo = ref(null)
 const form = ref({})
 const emit = defineEmits(['refresh']);
+const turnList = reactive(
+    model.value.jewels.map(jewel => ({
+      ...jewel,
+      disable: false,
+      selected: true, // 动态添加 selected 属性
+    }))
+);
+const choseJewelList = reactive(
+    turnList.filter(item=>item.selected).map(jewel => ({
+      ...jewel,
+    }))
+);
+
+function onShow(status) {
+  getOrderManagement(model.value.orderId).then(res => {
+    form.value = res.data
+    if (status === 'addressEditShow') {
+      addressEditShow.value = true
+    }
+    if (status === 'turnActionShow') {
+      turnActionShow.value = true
+      let turnInfo = res.data.turnInfo.map(item => item.jewelIds).flat()
+      turnList.forEach(item => {
+        if (turnInfo.includes(item.jewelId + '')) {
+          item.disable = true
+        }
+      })
+    }
+    if (status === 'feedbackActionShow') {
+      feedbackActionShow.value = true
+    }
+    if (status === 'orderEditShow'){
+      orderEditShow.value = true
+    }
+  })
+}
 
 function onAddressSave(data) {
   let address = {
@@ -171,19 +212,13 @@ function onAddressSave(data) {
   });
 }
 
-const turnList = reactive(
-    model.value.jewels.map(jewel => ({
-      ...jewel,
-      selected: true, // 动态添加 selected 属性
-    }))
-);
 
 const checkAll = computed({
   get: () => {
-    return turnList.every(jewel => jewel.selected)
+    return turnList.filter(jewel => !jewel.disable).every(jewel => jewel.selected)
   },
   set: (value) => {
-    turnList.forEach(jewel => {
+    turnList.filter(jewel => !jewel.disable).forEach(jewel => {
       jewel.selected = value;
     });
   }
@@ -195,7 +230,7 @@ function onConfirm() {
     title: '确认收货？',
     message: '请检查包装是否完好，首饰数量与订单数量是否一致',
   }).then(() => {
-    updateOrderManagement(form.value).then(response => {
+    updateOrderManagement(model.value).then(response => {
       showToast('确认完成');
       emit('refresh');
     });
@@ -207,11 +242,13 @@ function onReturnSubmit() {
   form.value.returnShipmentTrackingNo.push(returnShipmentTrackingNo.value)
   // 创建物流单
   let turnInfo = form.value.tripInfo
+  turnInfo.logisticsId = null
+  turnInfo.direction = 'turn'
   turnInfo.trackingNumber = returnShipmentTrackingNo.value
   turnInfo.recipientAddress = form.value.tripInfo.senderAddress
   turnInfo.recipientPhone = form.value.tripInfo.senderPhone
   turnInfo.recsenderName = form.value.tripInfo.senderName
-  turnInfo.jewelIds = turnList.filter(item=>item.selected).map(item=>item.jewelId)
+  turnInfo.jewelIds = turnList.filter(item => item.selected).map(item => item.jewelId)
   addLogistics(turnInfo).then(response => {
     updateOrderManagement(form.value).then(response => {
       showToast('寄回完成');
@@ -228,21 +265,6 @@ function onFeedbackSubmit() {
     feedbackActionShow.value = false;
     emit('refresh');
   });
-}
-
-function onShow(status) {
-  getOrderManagement(model.value.orderId).then(res => {
-    form.value = res.data
-    if (status === 'addressEditShow') {
-      addressEditShow.value = true
-    }
-    if (status === 'turnActionShow') {
-      turnActionShow.value = true
-    }
-    if (status === 'feedbackActionShow') {
-      feedbackActionShow.value = true
-    }
-  })
 }
 
 
