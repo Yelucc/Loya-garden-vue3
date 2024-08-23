@@ -58,7 +58,7 @@
           '补充返图宣发'
         }}
       </van-button>
-      <van-button type="danger" round plain hairline size="small" v-if="model.orderStatus === 'locked'">{{
+      <van-button type="danger" round plain hairline size="small" @click="onClose" v-if="model.orderStatus === 'locked'">{{
           '取消订单'
         }}
       </van-button>
@@ -144,7 +144,12 @@
 <script setup name="UserOrderCard">
 import {defineModel, defineEmits} from 'vue';
 import {areaList} from "@vant/area-data";
-import {addOrderManagement, getOrderManagement, updateOrderManagement} from "@/api/order/orderManagement.js";
+import {
+  addOrderManagement,
+  delOrderManagement,
+  getOrderManagement,
+  updateOrderManagement
+} from "@/api/order/orderManagement.js";
 import VantImageUpload from "@/components/VantImageUpload";
 import {showConfirmDialog, showToast} from "vant";
 import {addLogistics} from "@/api/logistics/logistics.js";
@@ -237,7 +242,18 @@ function onConfirm() {
   }).catch(() => {
   });
 }
-
+// 确认收货
+function onClose() {
+  showConfirmDialog({
+    title: '确认关闭订单？'
+  }).then(() => {
+    delOrderManagement(model.value.orderId).then(response => {
+      showToast('订单已关闭');
+      emit('refresh');
+    });
+  }).catch(() => {
+  });
+}
 function onReturnSubmit() {
   form.value.returnShipmentTrackingNo.push(returnShipmentTrackingNo.value)
   // 创建物流单
