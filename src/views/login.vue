@@ -65,9 +65,9 @@
 </template>
 
 <script setup>
-import { getCodeImg } from "@/api/login";
+import {getCodeImg} from "@/api/login";
 import Cookies from "js-cookie";
-import { encrypt, decrypt } from "@/utils/jsencrypt";
+import {decrypt, encrypt} from "@/utils/jsencrypt";
 import useUserStore from '@/store/modules/user'
 
 const userStore = useUserStore()
@@ -76,8 +76,8 @@ const router = useRouter();
 const { proxy } = getCurrentInstance();
 
 const loginForm = ref({
-  username: "admin",
-  password: "admin123",
+  username: "",
+  password: "",
   rememberMe: false,
   code: "",
   uuid: ""

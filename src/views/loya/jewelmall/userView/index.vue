@@ -30,7 +30,7 @@
 </template>
 
 <script setup>
-import UserOrderCard from "@/views/loya/jewelmall/user/user-order-card.vue";
+import UserOrderCard from "@/views/loya/jewelmall/userView/user-order-card.vue";
 import {listOrderVo} from "@/api/order/orderManagement.js";
 
 const tabs = [

@@ -33,6 +33,12 @@
     </div>
     <div class="control">
       <van-button
+          hairline plain round size="small" type="success"
+          @click="onDownLoadCaseImage"
+      >
+        {{ '保存原图到相册' }}
+      </van-button>
+      <van-button
           type="warning" round plain hairline size="small"
           @click="onShow('addressEditShow')"
           v-if="model.orderStatus === 'locked'"
@@ -43,6 +49,11 @@
       <!--                  v-if="model.orderStatus === 'shipped_awaiting_receipt'">-->
       <!--        {{ '查看物流' }}-->
       <!--      </van-button>-->
+      <van-button v-if="model.orderStatus === 'shipped_awaiting_receipt'" hairline plain round size="small"
+                  type="success"
+                  @click="trackingNumberShow = true">
+        {{ '查看单号' }}
+      </van-button>
       <van-button type="success" round plain hairline size="small"
                   @click="onConfirm"
                   v-if="model.orderStatus === 'shipped_awaiting_receipt'">
@@ -68,6 +79,18 @@
         }}
       </van-button>
     </div>
+
+    <van-action-sheet v-model:show="trackingNumberShow" title="查看物流单号">
+      <div class="tracking-number">
+        <div>{{ model.order.shipmentTrackingNo }}</div>
+        <van-button v-copyText="model.order.shipmentTrackingNo" v-copyText:callback="copyTextSuccess" hairline plain round size="small"
+                    type="primary"
+        >{{
+            '复制'
+          }}
+        </van-button>
+      </div>
+    </van-action-sheet>
 
     <van-action-sheet v-model:show="addressEditShow" title="补充收件地址">
       <van-address-edit
@@ -142,7 +165,7 @@
 </template>
 
 <script setup name="UserOrderCard">
-import {defineModel, defineEmits} from 'vue';
+import {defineEmits, defineModel} from 'vue';
 import {areaList} from "@vant/area-data";
 import {
   addOrderManagement,
@@ -163,6 +186,7 @@ const orderEditShow = ref(false)
 const addressEditShow = ref(false)
 const turnActionShow = ref(false)
 const feedbackActionShow = ref(false)
+const trackingNumberShow = ref(false)
 const returnShipmentTrackingNo = ref(null)
 const form = ref({})
 const emit = defineEmits(['refresh']);
@@ -217,6 +241,9 @@ function onAddressSave(data) {
   });
 }
 
+function copyTextSuccess() {
+  showToast('已复制');
+}
 
 const checkAll = computed({
   get: () => {
@@ -281,6 +308,17 @@ function onFeedbackSubmit() {
     feedbackActionShow.value = false;
     emit('refresh');
   });
+}
+
+function onDownLoadCaseImage() {
+  turnList.forEach(item => {
+    fetch(item.imageUrl.replace("preview_", ""))
+        .then(response => response.blob())
+        .then(blob => {
+          saveAs(blob, item.imageUrl.substring(item.imageUrl.lastIndexOf('/') + 1).replace("preview_", ""));
+        })
+        .catch(e => console.error('图片下载失败:', e));
+  })
 }
 
 
@@ -369,7 +407,6 @@ function onFeedbackSubmit() {
     gap: 5px;
   }
 }
-
 .turn-container {
   padding: 10px;
   display: flex;
@@ -386,5 +423,14 @@ function onFeedbackSubmit() {
     right: 5%;
     top: 40%;
   }
+}
+
+.tracking-number {
+  display: flex;
+  flex-direction: row;
+  padding: 20px 30px;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 22px;
 }
 </style>

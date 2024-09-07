@@ -66,9 +66,9 @@ export const constantRoutes = [
         children: [
             {
                 path: '/index',
-                component: () => import('@/views/index'),
+                component: () => import('@/views/loya/jewelmall'),
                 name: 'Index',
-                meta: {title: '首页', icon: 'dashboard', affix: true}
+                meta: {title: '珠宝盒', icon: 'dashboard', affix: true}
             },
             {
                 name: 'MallStatus',
