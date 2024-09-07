@@ -12,7 +12,7 @@
     </div>
     <div class="content">
       <div class="sku-list">
-        <div class="image-box" v-for="sku in model.jewels" :key="sku">
+        <div v-for="sku in model.jewels.slice(0,3)" :key="sku" class="image-box">
           <div class="tag">
             <van-tag type="primary">{{
                 jewel_category.filter(s => s.value === sku.category)[0] ? jewel_category.filter(s => s.value === sku.category)[0].label : ''
@@ -26,6 +26,7 @@
               :src="sku.imageUrl"
           />
         </div>
+        <div v-if="model.jewels.length > 3">...</div>
       </div>
       <div class="description">
         共{{ model.jewels.length }}件
@@ -211,7 +212,8 @@ function onShow(status) {
     }
     if (status === 'turnActionShow') {
       turnActionShow.value = true
-      let turnInfo = res.data.turnInfo.map(item => item.jewelIds).flat()
+      let turnInfo = res.data.turnInfo.map(item => item.jewelIds.filter(j => !item.exceptJewelIds.includes(j))).flat()
+      console.log(turnInfo)
       turnList.forEach(item => {
         if (turnInfo.includes(item.jewelId + '')) {
           item.disable = true
@@ -291,7 +293,7 @@ function onReturnSubmit() {
   turnInfo.recipientAddress = form.value.tripInfo.senderAddress
   turnInfo.recipientPhone = form.value.tripInfo.senderPhone
   turnInfo.recsenderName = form.value.tripInfo.senderName
-  turnInfo.jewelIds = turnList.filter(item => item.selected).map(item => item.jewelId)
+  turnInfo.jewelIds = turnList.filter(item => item.selected && !item.disable).map(item => item.jewelId)
   addLogistics(turnInfo).then(response => {
     updateOrderManagement(form.value).then(response => {
       showToast('寄回完成');

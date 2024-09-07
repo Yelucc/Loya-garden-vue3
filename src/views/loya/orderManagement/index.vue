@@ -213,16 +213,101 @@
 
                   <el-button type="primary" round @click="submitForm">确认</el-button>
                 </div>
+
+                <div v-if=" ['shipped_awaiting_receipt','received_awaiting_return'].includes(form.orderStatus)"
+                     class="shipped_awaiting_receipt">
+                  <el-descriptions :column="1" title="快递面单信息">
+                    <el-descriptions-item label="收件人">{{ form.tripInfo.recipientName }}</el-descriptions-item>
+                    <el-descriptions-item label="联系电话">{{ form.tripInfo.recipientPhone }}</el-descriptions-item>
+                    <el-descriptions-item label="地址">{{ form.tripInfo.recipientAddress }}</el-descriptions-item>
+                    <el-descriptions-item label="寄出物流单号">{{ form.shipmentTrackingNo }}</el-descriptions-item>
+                    <el-descriptions-item label="寄件人">{{ form.tripInfo.senderName }}</el-descriptions-item>
+                    <el-descriptions-item label="寄件人联系电话">{{ form.tripInfo.senderPhone }}</el-descriptions-item>
+                    <el-descriptions-item label="寄出地址">{{ form.tripInfo.senderAddress }}</el-descriptions-item>
+                  </el-descriptions>
+                </div>
+
+                <div v-if="form.orderStatus === 'return_awaiting_check'" class="return_awaiting_check">
+                  <div class="tracking_number">
+                    <el-descriptions v-for="turnInfo in form.turnInfo" :column="1" style="margin-bottom: 20px"
+                                     title="寄回面单信息">
+                      <el-descriptions-item label="寄出物流单号">
+                        <div style="font-size: 22px">{{ turnInfo.trackingNumber }}</div>
+                        <el-link v-copyText="turnInfo.trackingNumber" v-copyText:callback="copyTextSuccess" :underline="false"
+                                 icon="DocumentCopy" style="float:right">&nbsp;复制
+                        </el-link>
+                      </el-descriptions-item>
+                      <el-descriptions-item label="本单状态">
+                        <dict-tag :options="logistics_status" :value="turnInfo.confirmStatus"/>
+                      </el-descriptions-item>
+                      <el-descriptions-item label="寄回首饰">
+                        <div class="jewel-box">
+                          <van-card
+                              v-for="jewel in form.jewels.filter(item=>turnInfo.jewelIds.includes(item.jewelId+''))"
+                              :centered="true"
+                              :thumb="jewel.imageUrl"
+                              :title="jewel.jewelName"
+                              class="sku-card"
+                          >
+                          </van-card>
+                          <div>共{{
+                              form.jewels.filter(item => turnInfo.jewelIds.includes(item.jewelId + '')).length
+                            }}件
+                          </div>
+                        </div>
+                      </el-descriptions-item>
+                      <el-descriptions-item label="寄件人">{{ turnInfo.recipientName }}</el-descriptions-item>
+                      <el-descriptions-item label="寄件人联系电话">{{ turnInfo.recipientPhone }}</el-descriptions-item>
+                      <el-descriptions-item label="寄出地址">{{ turnInfo.recipientAddress }}</el-descriptions-item>
+                      <el-descriptions-item label="操作">
+                        <el-button :disabled="turnInfo.confirmStatus!=='Wait'" round type="primary"
+                                   @click="handleOnPass(turnInfo)">确认收到
+                        </el-button>
+                        <el-button :disabled="turnInfo.confirmStatus!=='Wait'" round type="primary"
+                                   @click="handleOnExecept(turnInfo)">异常处理
+                        </el-button>
+                      </el-descriptions-item>
+                    </el-descriptions>
+                  </div>
+                </div>
               </div>
             </div>
-
-
           </el-descriptions-item>
-
         </el-descriptions>
       </el-form>
     </el-drawer>
 
+
+    <!-- 异常物流管理对话框 -->
+    <el-dialog v-model="exceptOpen" append-to-body title="异常物流" width="800px">
+      <el-form ref="logisticsRef" :model="logisticsForm" :rules="exceptRules" label-width="auto">
+        <el-form-item label="异常首饰" prop="exceptJewelIds">
+          <div class="skus">
+            <van-card
+                v-for="jewel in turnList.filter(item=>logisticsForm.jewelIds?.includes(item.jewelId+''))"
+                :centered="true"
+                :thumb="jewel.imageUrl"
+                :title="jewel.jewelName"
+                class="sku-card"
+            >
+              <template #footer>
+                <van-checkbox v-model="jewel.selected" :disabled="jewel.disable" class="checkbox"/>
+              </template>
+            </van-card>
+          </div>
+
+        </el-form-item>
+        <el-form-item label="异常原因" prop="exceptDesc">
+          <el-input v-model="logisticsForm.exceptDesc" placeholder="请输入异常原因" type="textarea"/>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button type="primary" @click="submitExcept">提交异常</el-button>
+          <el-button @click=" exceptOpen=false">取 消</el-button>
+        </div>
+      </template>
+    </el-dialog>
 
   </div>
 </template>
@@ -235,12 +320,14 @@ import {
   listOrderManagement,
   updateOrderManagement
 } from "@/api/order/orderManagement";
+import {updateLogistics} from "@/api/logistics/logistics.js";
 
 const {proxy} = getCurrentInstance();
-const {order_status} = proxy.useDict('order_status');
+const {order_status, logistics_status} = proxy.useDict('order_status', 'logistics_status');
 
 const orderManagementList = ref([]);
 const open = ref(false);
+const exceptOpen = ref(false);
 const loading = ref(true);
 const showSearch = ref(true);
 const ids = ref([]);
@@ -248,6 +335,8 @@ const single = ref(true);
 const multiple = ref(true);
 const total = ref(0);
 const title = ref("");
+
+const exceptJewelList = ref([])
 
 const data = reactive({
   form: {},
@@ -274,22 +363,45 @@ const data = reactive({
   },
   rules: {
     jewelCode: [
-      {required: true, message: "关联首饰编码不能为空", trigger: "blur"}
+      {required: true, message: "关联首饰编码不能为空", trigger: "submit"}
     ],
     artistName: [
-      {required: true, message: "艺人不能为空", trigger: "blur"}
+      {required: true, message: "艺人不能为空", trigger: "submit"}
     ],
     purpose: [
-      {required: true, message: "用途不能为空", trigger: "blur"}
+      {required: true, message: "用途不能为空", trigger: "submit"}
     ],
     orderStatus: [
-      {required: true, message: "订单流程不能为空", trigger: "change"}
+      {required: true, message: "订单流程不能为空", trigger: "submit"}
+    ],
+  },
+  exceptRules: {
+    exceptJewelIds: [
+      {required: true, message: "异常首饰不能为空", trigger: "submit"}
+    ],
+    exceptDesc: [
+      {required: true, message: "异常原因不能为空", trigger: "submit"}
     ],
   }
 });
 
-const {queryParams, form, rules} = toRefs(data);
+const {queryParams, form, rules, exceptRules} = toRefs(data);
 const logisticsForm = ref({})
+const turnList = ref([])
+
+
+function submitExcept() {
+  logisticsForm.value.exceptJewelIds = turnList.value.filter(j => j.selected).map(j => j.jewelId + '')
+  proxy.$refs["logisticsRef"].validate(valid => {
+    if (valid) {
+      updateLogistics(logisticsForm.value).then(response => {
+        proxy.$modal.msgSuccess("提交成功");
+        exceptOpen.value = false;
+        logisticsForm.value = {}
+      });
+    }
+  });
+}
 
 /** 查询订单管理列表 */
 function getList() {
@@ -301,9 +413,37 @@ function getList() {
   });
 }
 
+/** 复制代码成功 */
+function copyTextSuccess() {
+  proxy.$modal.msgSuccess("复制成功");
+}
+
+/** 复制代码成功 */
+function handleOnPass(data) {
+  logisticsForm.value = data
+  logisticsForm.value.confirmStatus = "Pass"
+  updateLogistics(logisticsForm.value).then(response => {
+    proxy.$modal.msgSuccess("确认成功");
+    exceptOpen.value = false;
+    logisticsForm.value = {}
+  });
+}
+
+/** 复制代码成功 */
+function handleOnExecept(data) {
+  logisticsForm.value = data
+  turnList.value = form.value.jewels.filter(j => data.jewelIds.includes(j.jewelId + '')).map(jewel => ({
+    ...jewel,
+    disable: false,
+    selected: false, // 动态添加 selected 属性
+  }))
+  exceptOpen.value = true
+}
+
 // 取消按钮
 function cancel() {
   open.value = false;
+
   reset();
 }
 
@@ -421,6 +561,18 @@ getList();
   flex-direction: column;
   height: 200px;
   overflow-y: auto;
+}
+
+.skus {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+
+  .checkbox {
+    position: absolute;
+    right: 5%;
+    top: 40%;
+  }
 }
 
 .order-status {

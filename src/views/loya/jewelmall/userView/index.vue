@@ -8,7 +8,7 @@
         <van-search shape="round" v-model="searchQuery" placeholder="请输入搜索关键词"/>
       </template>
     </van-nav-bar>
-    <van-tabs v-model:active="active" @change="onLoad">
+    <van-tabs v-model:active="active" @change="onChangeTab">
       <van-tab :title="tab.title" :name="tab.name" v-for="tab in tabs" :key="tab.name">
         <van-list
             class="card-container"
@@ -68,22 +68,34 @@ const finished = ref(false);
 
 const orderList = ref([])
 const total = ref(0)
+const pageNum = ref(1)
 
 function getList() {
   loading.value = true;
   listOrderVo({
-    pageNum: 1,
+    pageNum: pageNum.value,
     pageSize: 4,
     orderStatus: active.value === 0 ? null : active.value
   }).then(response => {
-    orderList.value = response.rows
+    orderList.value = [...orderList.value, ...response.rows]
     total.value = response.total;
     loading.value = false;
-    finished.value = response.rows.length === response.total;
+    if (orderList.value.length < response.total) {
+      pageNum.value = pageNum.value + 1
+      finished.value = false
+    } else {
+      finished.value = true
+    }
   })
 }
 
 function onLoad() {
+  getList()
+}
+
+function onChangeTab() {
+  orderList.value = []
+  pageNum.value = 1
   getList()
 }
 </script>
