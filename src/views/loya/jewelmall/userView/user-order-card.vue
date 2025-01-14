@@ -2,10 +2,15 @@
   <div class="order-container">
     <div class="header">
       <div class="artistName">{{ model.artistName }}</div>
-      <div class="status">{{
-          order_status.filter(s => s.value === model.orderStatus)[0] ? order_status.filter(s => s.value === model.orderStatus)[0].label : ''
-        }}
+      <div style="display: flex;gap:10px">
+        <dict-tag v-if="model.order.turnInfo.filter(t=>t.confirmStatus==='Except').length>0 && model.orderStatus!=='returned'" :options="logistics_status"
+                  :value="'Except'"/>
+        <div class="status">{{
+            selectDictLabel(order_status, model.orderStatus)
+          }}
+        </div>
       </div>
+
     </div>
     <div class="sub-header">
       <div class="status-desc">{{ model.statusDescription }}</div>
@@ -15,7 +20,7 @@
         <div v-for="sku in model.jewels.slice(0,3)" :key="sku" class="image-box">
           <div class="tag">
             <van-tag type="primary">{{
-                jewel_category.filter(s => s.value === sku.category)[0] ? jewel_category.filter(s => s.value === sku.category)[0].label : ''
+                selectDictLabel(jewel_category, sku.category)
               }}
             </van-tag>
           </div>
@@ -70,7 +75,8 @@
           '补充返图宣发'
         }}
       </van-button>
-      <van-button type="danger" round plain hairline size="small" @click="onClose" v-if="model.orderStatus === 'locked'">{{
+      <van-button v-if="model.orderStatus === 'locked'" hairline plain round size="small" type="danger"
+                  @click="onClose">{{
           '取消订单'
         }}
       </van-button>
@@ -84,7 +90,8 @@
     <van-action-sheet v-model:show="trackingNumberShow" title="查看物流单号">
       <div class="tracking-number">
         <div>{{ model.order.shipmentTrackingNo }}</div>
-        <van-button v-copyText="model.order.shipmentTrackingNo" v-copyText:callback="copyTextSuccess" hairline plain round size="small"
+        <van-button v-copyText="model.order.shipmentTrackingNo" v-copyText:callback="copyTextSuccess" hairline plain
+                    round size="small"
                     type="primary"
         >{{
             '复制'
@@ -161,7 +168,8 @@
       </div>
     </van-action-sheet>
 
-    <JewelReserveAction v-model="choseJewelList" v-model:show="orderEditShow" v-model:form-data="form"></JewelReserveAction>
+    <JewelReserveAction v-model="choseJewelList" v-model:form-data="form"
+                        v-model:show="orderEditShow"></JewelReserveAction>
   </div>
 </template>
 
@@ -178,9 +186,10 @@ import VantImageUpload from "@/components/VantImageUpload";
 import {showConfirmDialog, showToast} from "vant";
 import {addLogistics} from "@/api/logistics/logistics.js";
 import JewelReserveAction from "@/views/loya/jewelmall/JewelReserveAction.vue";
+import {selectDictLabel} from "@/utils/ruoyi.js";
 
 const {proxy} = getCurrentInstance();
-const {order_status} = proxy.useDict('order_status');
+const {order_status, logistics_status} = proxy.useDict('order_status', 'logistics_status');
 const {jewel_category} = proxy.useDict('jewel_category');
 const model = defineModel()
 const orderEditShow = ref(false)
@@ -199,7 +208,7 @@ const turnList = reactive(
     }))
 );
 const choseJewelList = reactive(
-    turnList.filter(item=>item.selected).map(jewel => ({
+    turnList.filter(item => item.selected).map(jewel => ({
       ...jewel,
     }))
 );
@@ -223,7 +232,7 @@ function onShow(status) {
     if (status === 'feedbackActionShow') {
       feedbackActionShow.value = true
     }
-    if (status === 'orderEditShow'){
+    if (status === 'orderEditShow') {
       orderEditShow.value = true
     }
   })
@@ -271,6 +280,7 @@ function onConfirm() {
   }).catch(() => {
   });
 }
+
 // 确认收货
 function onClose() {
   showConfirmDialog({
@@ -283,7 +293,13 @@ function onClose() {
   }).catch(() => {
   });
 }
+
 function onReturnSubmit() {
+  if (!returnShipmentTrackingNo.value) {
+    showToast('请填写物流单号');
+    return
+  }
+
   form.value.returnShipmentTrackingNo.push(returnShipmentTrackingNo.value)
   // 创建物流单
   let turnInfo = form.value.tripInfo
@@ -409,6 +425,7 @@ function onDownLoadCaseImage() {
     gap: 5px;
   }
 }
+
 .turn-container {
   padding: 10px;
   display: flex;
